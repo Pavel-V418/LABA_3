@@ -5,7 +5,6 @@
 #include <cmath>
 #include "square_matrix.h"
 
-// хранит только диагональ
 template <class T>
 class DiagonalMatrix : public IMatrix<T>{
 
