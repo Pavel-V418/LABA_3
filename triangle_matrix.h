@@ -3,7 +3,7 @@
 
 #include "square_matrix.h"
 #include "LABA_2/dynamicArray.h"
-// тоже квадратная матрица
+
 enum class TriangleType {
     lower_triangle,
     upper_triangle
