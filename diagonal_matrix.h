@@ -29,31 +29,31 @@ public:
     DiagonalMatrix<T>* multiply_scalar(const T& scalar) const override;
 
 private:
-    DynamicArray<T> save_diagonal; // хранит только элементы на диагонали матрицы
+    DynamicArray<T> data; // хранит только элементы на диагонали матрицы
     int n; // так как диагональная матрица - квадратная
 };
 
 template<class T>
 DiagonalMatrix<T>::DiagonalMatrix()
-    : save_diagonal(0) { n = 0;}
+    : data(0) { n = 0;}
 
 template<class T>
 DiagonalMatrix<T>::DiagonalMatrix(int n)
-    : save_diagonal(n) { this->n = n; }
+    : data(n) { this->n = n; }
 
 template<class T>
 DiagonalMatrix<T>::DiagonalMatrix(const T& items, int n)
-    : save_diagonal(items, n) { this->n = n;} // недописал
+    : data(items, n) { this->n = n;} // недописал
 
 template<class T>
 DiagonalMatrix<T>::DiagonalMatrix(const DiagonalMatrix<T> &other)
-    :save_diagonal(other.data) { this->n = other.n; }
+    :data(other.data) { this->n = other.n; }
 
 template<class T>
 const T& DiagonalMatrix<T>::get(int i, int j) const{
     if (i != j)
         throw std::invalid_argument("i must be = j");
-    return save_diagonal[i];
+    return data[i];
 }
 
 template<class T>
@@ -70,7 +70,7 @@ template<class T>
 double DiagonalMatrix<T>::norm() const {
     double sum = 0;
     for (int i = 0; i < n; i++)
-        sum += save_diagonal[i] * save_diagonal[i];
+        sum += data[i] * data[i];
 
     return std::sqrt(sum);
 }
@@ -80,7 +80,7 @@ void DiagonalMatrix<T>::set(const T& value, int i, int j) {
     if (i != j)
         throw std::invalid_argument("i must be = j");
 
-    save_diagonal.set(value, i);
+    data.set(value, i);
 }
 
 template<class T>
@@ -104,7 +104,7 @@ DiagonalMatrix<T>* DiagonalMatrix<T>::multiply_scalar(const T& scalar) const {
     auto *result = new DiagonalMatrix<T>(n);
 
     for (int i = 0; i < n; i++)
-        result->save_diagonal.set(this->get(i) * scalar, i);
+        result->data.set(this->get(i) * scalar, i);
 
     return result;
 }

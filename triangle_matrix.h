@@ -34,14 +34,14 @@ public:
 
 
 private:
-    DynamicArray<T> triangle_data; // хранит только значения в треугольнике выбранного типа
+    DynamicArray<T> data; // хранит только значения в треугольнике выбранного типа
     int n; // матрица квадратная
     TriangleType type;
 };
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(TriangleType type)
-    : triangle_data(0)
+    : data(0)
 {
     n = 0;
     this->type = type;
@@ -49,7 +49,7 @@ TriangleMatrix<T>::TriangleMatrix(TriangleType type)
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(int n, TriangleType type)
-    : triangle_data(n)
+    : data(n)
 {
     this->n = n;
     this->type = type;
@@ -57,7 +57,7 @@ TriangleMatrix<T>::TriangleMatrix(int n, TriangleType type)
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(T *items, int n, TriangleType type)
-    : triangle_data(items)
+    : data(items)
 {
     this->n = n;
     this->type = type;
@@ -65,7 +65,7 @@ TriangleMatrix<T>::TriangleMatrix(T *items, int n, TriangleType type)
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(const TriangleMatrix<T> &other)
-    : triangle_data(other.data)
+    : data(other.data)
 {
     n = other.n;
     type = other.type;
@@ -118,7 +118,7 @@ double TriangleMatrix<T>::norm() const{
 
         if (type == TriangleType::upper_triangle) {
             for (int j = i; j < this->get_rows(); j++) {
-                T value = static_cast<double>(this->get(i, j));
+                auto value = static_cast<double>(this->get(i, j));
                 sum += value * value;
             }
         } // type upper

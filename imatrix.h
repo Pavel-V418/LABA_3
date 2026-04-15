@@ -14,7 +14,7 @@ public:
 
     virtual double norm() const = 0;
 
-    virtual void set(const T& , int i, int j) = 0;
+    virtual void set(const T& value, int i, int j) = 0;
 
     virtual IMatrix<T>* add(const IMatrix<T>& other) const = 0;
     virtual IMatrix<T>* multiply_scalar(const T& scalar) const = 0;

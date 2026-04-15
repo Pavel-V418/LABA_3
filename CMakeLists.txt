@@ -11,4 +11,5 @@ add_executable(LABA3 main.cpp
         imatrix.h
         triangle_matrix.h
         diagonal_matrix.h
+        sparse_matrix.h
 )

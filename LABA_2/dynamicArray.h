@@ -28,6 +28,8 @@ public:
     void set(const T& value, int index);
     void resize(int newSize);
 
+    void remove_at(int index);
+
     // итератор
     class ArrayEnumerator : public IEnumerator<T> {
 
@@ -144,6 +146,20 @@ void DynamicArray<T>::resize(int newSize) {
     delete[] data;
     data = newData;
     size = newSize;
+}
+
+template<class T>
+void DynamicArray<T>::remove_at(int index)
+{
+    if (index < 0 || index >= size)
+        throw std::out_of_range("index out of range");
+
+    for (int i = index; i < size - 1; i++)
+    {
+        data[i] = data[i + 1];
+    }
+
+    size--;
 }
 
 #endif //LABA2_DYNAMICARRAY_H
