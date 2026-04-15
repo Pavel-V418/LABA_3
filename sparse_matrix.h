@@ -152,4 +152,5 @@ void SparseMatrix<T>::set(const T& value, int i, int j)
         data.set(element, size);
     }
 }
+
 #endif //LABA3_SPARSE_MATRIX_H
