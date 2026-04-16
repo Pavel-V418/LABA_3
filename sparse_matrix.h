@@ -34,13 +34,16 @@ public:
 
     void set(const T& value, int i, int j) override;
 
-    SparseMatrix* add(const IMatrix<T>& other) const override;
-    SparseMatrix* multiply_scalar(const T& scalar) const override;
+    SparseMatrix<T>* add(const IMatrix<T>& other) const override;
+    SparseMatrix<T>* multiply_scalar(const T& scalar) const override;
 
 private:
     DynamicArray<Element<T>> data; // храним всё, кроме нулей
     int rows;
     int columns;
+
+    int bin_search(int i, int j) const; // бинарный поиск элемента (i,j)
+    int lower_bound(int i, int j) const; // поиск нижней границы для вставки элемента
 
 };
 
@@ -114,43 +117,113 @@ double SparseMatrix<T>::norm() const {
 }
 
 template<class T>
-void SparseMatrix<T>::set(const T& value, int i, int j)
-{
-    if (i < 0 || j < 0 ||
-        i >= this->get_rows() ||
-        j >= this->get_columns())
-        throw std::out_of_range("index out of range");
+void SparseMatrix<T>::set(const T& value, int i, int j){
+    if (i < 0 || j < 0 || i >= this->get_rows() || j >= this->get_columns())
+        throw std::out_of_range("index");
 
-    for (int k = 0; k < data.get_size(); k++)
-    {
-        if (data.get(k).row == i &&
-            data.get(k).col == j)
-        {
-            // если value = 0 , то удалаяем элемент из матрицы
-            if (value == T(0))
-            {
-                data.remove(k);
-            }
-            else
-            {
-                data.get(k).value = value;
-            }
-            return;
+    int index = bin_search(i, j);
+
+    // элемент найден
+    if (index != -1) {
+        if (value == T(0)){
+            data.remove_at(index);
+        }
+
+        else{
+            data.set(Element<T>{i, j, value}, index);
+        }
+        return;
+    }
+
+    // элемент НЕ найден
+    if (value == T(0))
+        return;
+
+    int pos = lower_bound(i, j);
+
+    data.resize(data.get_size() + 1);
+
+    // сдвиг элементов вправо
+    for (int k = data.get_size() - 1; k > pos; k--){
+        data.set(data.get(k - 1), k);
+    }
+
+    data.set(Element<T>{i, j, value}, pos);
+}
+
+template<class T>
+SparseMatrix<T>* SparseMatrix<T>::add(const IMatrix<T>& other) const {
+    if (this->get_rows() != other.get_rows() || this->get_columns() != other.get_columns())
+        throw std::invalid_argument("add: sizes must match");
+
+    auto* result = new SparseMatrix<T>(this->get_rows(), this->get_columns());
+
+    for (int i = 0; i < this->get_rows(); i++) {
+        for (int j = 0; j < this->get_columns(); j++) {
+            result->set(this->get(i, j) + other.get(i, j), i, j);
         }
     }
 
-    // если не найден
-    if (value != T(0))
-    {
-        Element<T> element;
-        element.row = i;
-        element.col = j;
-        element.value = value;
-
-        int size = data.get_size();
-        data.resize(size + 1);
-        data.set(element, size);
-    }
+    return result;
 }
 
+template<class T>
+SparseMatrix<T>* SparseMatrix<T>::multiply_scalar(const T& scalar) const {
+    auto *result = new SparseMatrix<T>(this->get_rows(), this->get_columns());
+
+    if (scalar == T(0))
+        return result;
+
+    for (int k = 0; k < data.get_size(); k++) {
+        const Element<T>& e = data.get(k);
+
+        result->set(e.value * scalar, e.i, e.j);
+    }
+
+    return result;
+}
+
+// private function
+template<class T>
+int SparseMatrix<T>::bin_search(int i, int j) const {
+    int left = 0;
+    int right = data.get_size() - 1;
+
+    while (left <= right)
+    {
+        int mid = (left + right) / 2;
+
+        const Element<T>& e = data.get(mid);
+
+        if (e.i == i && e.j == j)
+            return mid;
+
+        if (e.i < i || (e.i == i && e.j < j))
+            left = mid + 1;
+        else
+            right = mid - 1;
+    }
+
+    return -1;
+}
+
+template<class T>
+int SparseMatrix<T>::lower_bound(int i, int j) const {
+    int left = 0;
+    int right = data.get_size();
+
+    while (left < right)
+    {
+        int mid = (left + right) / 2;
+
+        const Element<T>& e = data.get(mid);
+
+        if (e.i < i || (e.i == i && e.j < j))
+            left = mid + 1;
+        else
+            right = mid;
+    }
+
+    return left;
+}
 #endif //LABA3_SPARSE_MATRIX_H

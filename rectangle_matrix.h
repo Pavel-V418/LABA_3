@@ -16,7 +16,7 @@ public:
     RectangleMatrix<T>* add(const IMatrix<T>& other) const override;
     RectangleMatrix<T>* multiply_scalar(const T& scalar) const override;
 
-    double norm() const;
+    double norm() const override;
 
     // row's operations
     void swap_rows(int row1, int row2);
@@ -85,7 +85,7 @@ double RectangleMatrix<T>::norm() const {
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < columns; j++) {
-            double value = static_cast<double>(this->get(i, j));
+            auto value = static_cast<double>(this->get(i, j));
             sum += value * value;
         }
     }
@@ -93,6 +93,7 @@ double RectangleMatrix<T>::norm() const {
     return std::sqrt(sum);
 }
 
+// элементарные преобразования
 template<class T>
 void RectangleMatrix<T>::swap_rows(int row1, int row2) {
     int rows = this->get_rows();

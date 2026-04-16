@@ -19,7 +19,7 @@ public:
     SquareMatrix<T>* add(const IMatrix<T>& other) const override;
     SquareMatrix<T>* multiply_scalar(const T& scalar) const override;
 
-    double norm() const;
+    double norm() const override;
 
     // row's operations
     void swap_rows(int row1, int row2);
