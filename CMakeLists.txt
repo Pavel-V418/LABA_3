@@ -7,7 +7,6 @@ add_executable(LABA3 main.cpp
         base_matrix.h
         square_matrix.h
         rectangle_matrix.h
-        LABA_2/diagonal_matrix.h
         imatrix.h
         triangle_matrix.h
         diagonal_matrix.h
