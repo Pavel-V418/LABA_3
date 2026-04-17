@@ -12,4 +12,5 @@ add_executable(LABA3 main.cpp
         diagonal_matrix.h
         sparse_matrix.h
         complex.h
+        vector.h
 )

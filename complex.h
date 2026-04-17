@@ -18,8 +18,8 @@ public:
         return Complex(re - other.re, im - other.im);
     }
 
-    Complex operator*(const Complex &o) const {
-        return Complex(re * o.re - im * o.im, re * o.im + im * o.re);
+    Complex operator*(const Complex &other) const {
+        return Complex(re * other.re - im * other.im, re * other.im + im * other.re);
     }
 
     Complex operator/(const Complex& other) const {
