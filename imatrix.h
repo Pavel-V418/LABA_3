@@ -7,7 +7,7 @@ class IMatrix {
 public:
     virtual ~IMatrix() = default;
 
-    virtual const T& get(int i, int j) const = 0;
+    virtual const T& get(int i, int j) const = 0; //rows col
 
     virtual int get_rows() const = 0;
     virtual int get_columns() const = 0;

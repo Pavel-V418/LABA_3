@@ -4,9 +4,8 @@ project(LABA3)
 set(CMAKE_CXX_STANDARD 20)
 
 add_executable(LABA3 main.cpp
-        base_matrix.h
-        square_matrix.h
         rectangle_matrix.h
+        square_matrix.h
         imatrix.h
         triangle_matrix.h
         diagonal_matrix.h

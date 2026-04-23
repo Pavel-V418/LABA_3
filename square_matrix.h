@@ -2,14 +2,14 @@
 #define LABA3_SQUARE_MATRIX_H
 
 #include <cmath>
-#include "base_matrix.h"
+#include "rectangle_matrix.h"
 
 template <class T>
-class SquareMatrix : public BaseMatrix<T> {
+class SquareMatrix : public RectangleMatrix<T> {
 
 public:
     SquareMatrix();
-    SquareMatrix(int n); // добавить во входной параметр T* item или const T& item
+    SquareMatrix(int n);
     SquareMatrix(T* arr, int n);
     SquareMatrix(const SquareMatrix<T>& other);
 
@@ -22,32 +22,26 @@ public:
     double norm() const override;
 
     // row's operations
-    void swap_rows(int row1, int row2);
-    void multiply_rows(int i, const T& scalar);
-    void add_row(int i, int i_1, const T& scalar); // i_1 - та строка, которую мы берем и прибавляем в i-ой
-
-    // column's operations
-    /*void swap_columns(int column1, int column2);
-    void multiply_columns(int j, const T& scalar);
-    void add_column(int i, int j, const T& scalar);*/ // нужно ли?
-
+    void swap_rows(int row1, int row2) override;
+    void multiply_rows(int row, const T& scalar) override;
+    void add_row(int row1, int row2, const T& scalar) override;
 };
 
 template <class T>
 SquareMatrix<T>::SquareMatrix()
-    : BaseMatrix<T>() {}
+    : RectangleMatrix<T>() {}
 
 template <class T>
 SquareMatrix<T>::SquareMatrix(int n)
-    : BaseMatrix<T>(n, n) {}
+    : RectangleMatrix<T>(n, n) {}
 
 template<class T>
 SquareMatrix<T>::SquareMatrix(T *arr, int n)
-    : BaseMatrix<T>(arr, n, n) {}
+    : RectangleMatrix<T>(arr, n, n) {}
 
 template <class T>
 SquareMatrix<T>::SquareMatrix(const SquareMatrix<T>& other)
-    : BaseMatrix<T>(other) {}
+    : RectangleMatrix<T>(other) {}
 
 template<class T>
 SquareMatrix<T>* SquareMatrix<T>::add(const IMatrix<T>& other) const {
@@ -88,7 +82,8 @@ double SquareMatrix<T>::norm() const {
 
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
-            auto value = static_cast<double>(this->get(i, j));
+            using std::abs;
+            auto value = static_cast<double>(abs(this->get(i, j)));
             sum += value * value;
         }
     }
@@ -114,27 +109,25 @@ void SquareMatrix<T>::swap_rows(int row1, int row2) {
     }
 }
 template <class T>
-void SquareMatrix<T>::multiply_rows(int i, const T& scalar) {
-    int n = this->get_rows();
-
-    if (i < 0 || i >= n)
+void SquareMatrix<T>::multiply_rows(int row, const T& scalar) {
+    if (row < 0 || row >= this->get_rows())
         throw std::out_of_range("Matrix row index out of range");
 
-    for (int j = 0; j < n; j++)
-        this->set(this->get(i, j) * scalar, i, j);
+    for (int j = 0; j < this->get_rows(); j++)
+        this->set(this->get(row, j) * scalar, row, j);
 }
 
 template <class T>
-void SquareMatrix<T>::add_row(int i, int i_1, const T& scalar) {
+void SquareMatrix<T>::add_row(int row1, int row2, const T& scalar) {
     int n = this->get_rows();
 
-    if (i < 0 || i >= n || i_1 < 0 || i_1 >= n)
+    if (row1 < 0 || row1 >= n || row2 < 0 || row2 >= n)
         throw std::out_of_range("Matrix row index out of range");
 
     for (int k = 0; k < n; k++) {
-        T value = this->get(i_1, k) * scalar + this->get(i,k);
+        T value = this->get(row2, k) * scalar + this->get(row1,k);
 
-        this->set(value, i, k);
+        this->set(value, row1, k);
     }
 }
 

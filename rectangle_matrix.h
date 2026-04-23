@@ -1,58 +1,113 @@
-#ifndef LABA3_RECTANGLE_MATRIX_H
-#define LABA3_RECTANGLE_MATRIX_H
+#ifndef LABA3_MATRIX_H
+#define LABA3_MATRIX_H
 
-#include <cmath>
-#include "base_matrix.h"
+#include "imatrix.h"
+#include "LABA_2/dynamicArray.h"
 
-template <class T>
-class RectangleMatrix : public BaseMatrix<T> {
+template<class T>
+class RectangleMatrix : public IMatrix<T>{
 
 public:
     RectangleMatrix();
-    RectangleMatrix(int rows, int columns);
-    RectangleMatrix(T *arr, int rows, int columns);
+    RectangleMatrix(int row, int column); // переименовать i j
+    RectangleMatrix(T* arr, int row, int column);
     RectangleMatrix(const RectangleMatrix<T>& other);
 
-    RectangleMatrix<T>* add(const IMatrix<T>& other) const override;
-    RectangleMatrix<T>* multiply_scalar(const T& scalar) const override;
+    ~RectangleMatrix() override = default;
 
-    double norm() const override;
+    const T& get(int row, int column) const override;
+    int get_rows() const override;
+    int get_columns() const override;
+
+    void set(const T& value, int row, int column) override;
+
+    RectangleMatrix<T>* add(const IMatrix<T>& other) const override; // complete
+    RectangleMatrix<T>* multiply_scalar(const T& scalar) const override; // complete
+
+    double norm() const override; // complete
 
     // row's operations
-    void swap_rows(int row1, int row2);
-    void multiply_rows(int i, const T& scalar);
-    void add_row(int i, int i_1, const T& scalar);
+    virtual void swap_rows(int row1, int row2); // complete
+    virtual void multiply_rows(int row, const T& scalar); // complete
+    virtual void add_row(int row1, int row2, const T& scalar); // complete
 
+private:
+    DynamicArray<T> data;
+    int rows; // строки
+    int columns; // столбцы
+
+    static int check_size(int row,int column);
+
+    void check_range(int row, int column) const;
 };
 
-template <class T>
+// constructors
+template<class T>
 RectangleMatrix<T>::RectangleMatrix()
-    : BaseMatrix<T>() {}
-
-template <class T>
-RectangleMatrix<T>::RectangleMatrix(int rows, int columns)
-    : BaseMatrix<T>(rows, columns) {}
+    : data(0), rows(0), columns(0) {}
 
 template<class T>
-RectangleMatrix<T>::RectangleMatrix(T *arr, int rows, int columns)
-    : BaseMatrix<T>(arr, rows, columns) {}
+RectangleMatrix<T>::RectangleMatrix(int row, int column)
+    : data(check_size(row, column)), rows(row), columns(column) {}
+
+template<class T>
+RectangleMatrix<T>::RectangleMatrix(T *arr, int row, int column)
+    : data(arr, check_size(row, column)), rows(row), columns(column) {}
+
+template<class T>
+RectangleMatrix<T>::RectangleMatrix(const RectangleMatrix<T>& other)
+    : data(other.data), rows(other.rows), columns(other.columns) {}
+
+//getters
+template<class T>
+const T& RectangleMatrix<T>::get(int row, int column) const {
+    check_range(row, column);
+
+    return data.get(row*columns + column); // row-major order
+};
+
+template<class T>
+int RectangleMatrix<T>::get_rows() const {
+    return rows;
+}
+
+template<class T>
+int RectangleMatrix<T>::get_columns() const {
+    return columns;
+}
+
+// setter
+template<class T>
+void RectangleMatrix<T>::set(const T& value, int row, int column){
+    check_range(row, column);
+
+    data.set(value, row*columns + column);
+}
 
 template <class T>
-RectangleMatrix<T>::RectangleMatrix(const RectangleMatrix<T>& other)
-    : BaseMatrix<T>(other) {}
+double RectangleMatrix<T>::norm() const {
+    double sum = 0;
+
+    for (int i = 0; i < this->get_rows(); i++) {
+        for (int j = 0; j < this->get_columns(); j++) {
+            using std::abs;
+            auto value = static_cast<double>(abs(this->get(i, j)));
+            sum += value * value;
+        }
+    }
+
+    return std::sqrt(sum);
+}
 
 template <class T>
 RectangleMatrix<T>* RectangleMatrix<T>::add(const IMatrix<T>& other) const {
-    int rows = this->get_rows();
-    int columns = this->get_columns();
-
-    if (rows != other.get_rows() || columns != other.get_columns())
+    if (this->get_rows() != other.get_rows() || this->get_columns() != other.get_columns())
         throw std::out_of_range("Matrix size must match");
 
-    auto *result = new RectangleMatrix<T>(rows, columns);
+    auto *result = new RectangleMatrix<T>(this->get_rows(), this->get_columns());
 
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < columns; j++) {
+    for (int i = 0; i < this->get_rows(); i++) {
+        for (int j = 0; j < this->get_columns(); j++) {
             result->set(this->get(i, j) + other.get(i, j), i, j);
         }
     }
@@ -62,13 +117,10 @@ RectangleMatrix<T>* RectangleMatrix<T>::add(const IMatrix<T>& other) const {
 
 template <class T>
 RectangleMatrix<T>* RectangleMatrix<T>::multiply_scalar(const T& scalar) const {
-    int rows = this->get_rows();
-    int columns = this->get_columns();
+    auto *result = new RectangleMatrix<T>(this->get_rows(), this->get_columns());
 
-    auto *result = new RectangleMatrix<T>(rows, columns);
-
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < columns; j++) {
+    for (int i = 0; i < this->get_rows(); i++) {
+        for (int j = 0; j < this->get_columns(); j++) {
             result->set(this->get(i, j) * scalar, i, j);
         }
     }
@@ -76,36 +128,16 @@ RectangleMatrix<T>* RectangleMatrix<T>::multiply_scalar(const T& scalar) const {
     return result;
 }
 
-template <class T>
-double RectangleMatrix<T>::norm() const {
-    int rows = this->get_rows();
-    int columns = this->get_columns();
-
-    double sum = 0;
-
-    for (int i = 0; i < rows; i++) {
-        for (int j = 0; j < columns; j++) {
-            auto value = static_cast<double>(this->get(i, j));
-            sum += value * value;
-        }
-    }
-
-    return std::sqrt(sum);
-}
-
 // элементарные преобразования
 template<class T>
 void RectangleMatrix<T>::swap_rows(int row1, int row2) {
-    int rows = this->get_rows();
-    int columns = this->get_columns();
-
     if (row1 == row2)
         return;
 
-    if (row1 < 0 || row2 < 0 || row1 >= rows || row2 >= rows)
+    if (row1 < 0 || row2 < 0 || row1 >= this->get_rows() || row2 >= this->get_rows())
         throw std::out_of_range("out of range");
 
-    for (int j = 0; j < columns; j++) {
+    for (int j = 0; j < this->get_columns(); j++) {
         T value = this->get(row1, j);
 
         this->set(this->get(row2, j), row1, j);
@@ -114,31 +146,39 @@ void RectangleMatrix<T>::swap_rows(int row1, int row2) {
 }
 
 template <class T>
-void RectangleMatrix<T>::multiply_rows(int i, const T& scalar) {
-    int rows = this->get_rows();
-    int columns = this->get_columns();
-
-    if (i < 0 || i >= rows)
+void RectangleMatrix<T>::multiply_rows(int row, const T& scalar) {
+    if (row < 0 || row >= this->get_rows())
         throw std::out_of_range("Matrix row index out of range");
 
-    for (int j = 0; j < columns; j++) {
-        this->set(this->get(i, j) * scalar, i, j);
+    for (int j = 0; j < this->get_columns(); j++) {
+        this->set(this->get(row, j) * scalar, row, j);
     }
 }
 
 template<class T>
-void RectangleMatrix<T>::add_row(int i, int i_1, const T& scalar) {
-    int rows = this->get_rows();
-    int columns = this->get_columns();
-
-    if (i < 0 || i >= rows || i_1 < 0 || i_1 >= rows)
+void RectangleMatrix<T>::add_row(int row1, int row2, const T& scalar) {
+    if (row1 < 0 || row1 >= this->get_rows() || row2 < 0 || row2 >= this->get_rows())
         throw std::out_of_range("Matrix row index out of range");
 
-    for (int k = 0; k < columns; k++) {
-        T value = this->get(i_1, k) * scalar + this->get(i,k);
+    for (int k = 0; k < this->get_columns(); k++) {
+        T value = this->get(row2, k) * scalar + this->get(row1,k);
 
-        this->set(value, i, k);
+        this->set(value, row1, k);
     }
 }
 
-#endif //LABA3_RECTANGLE_MATRIX_H
+//private
+template<class T>
+int RectangleMatrix<T>::check_size(int row, int column) {
+    if (row < 0 || column < 0)
+        throw std::out_of_range("Index out of range");
+
+    return row * column;
+}
+
+template<class T>
+void RectangleMatrix<T>::check_range(int row, int column) const {
+    if (row >= this->get_rows() || column >= this->get_columns() || row < 0 || column < 0)
+        throw std::out_of_range("index out of range");
+}
+#endif //LABA3_MATRIX_H

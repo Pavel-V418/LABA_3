@@ -20,14 +20,14 @@ public:
 
     ~TriangleMatrix() override = default;
 
-    const T& get(int i, int j) const override;
+    const T& get(int row, int column) const override;
 
     int get_rows() const override;
     int get_columns() const override;
 
-    double norm() const override;
+    double norm() const override; // проверить, надо ли менять
 
-    void set(const T& value, int i, int j) override;
+    void set(const T& value, int row, int column) override;
 
     SquareMatrix<T>* add(const IMatrix<T>& other) const override;
     TriangleMatrix<T>* multiply_scalar(const T& scalar) const override;
@@ -37,53 +37,44 @@ private:
     DynamicArray<T> data; // хранит только значения в треугольнике выбранного типа
     int n; // матрица квадратная
     TriangleType type;
+
+    static const T zero{}; // живет всю программу
+
+    static int check_size(int n);
+    bool check_range(int row,int column) const;
+
+    int triangle_index(int row, int column) const; // тип треугольника
 };
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(TriangleType type)
-    : data(0)
-{
-    n = 0;
-    this->type = type;
-}
+    : data(0), n(0), type(type) {}
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(int n, TriangleType type)
-    : data(n)
-{
-    this->n = n;
-    this->type = type;
-}
+    : data(check_size(n)), n(n), type(type) {}
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(T *items, int n, TriangleType type)
-    : data(items)
-{
-    this->n = n;
-    this->type = type;
-}
+    : data(items, check_size(n)), n(n), type(type) {}
 
 template<class T>
 TriangleMatrix<T>::TriangleMatrix(const TriangleMatrix<T> &other)
-    : data(other.data)
-{
-    n = other.n;
-    type = other.type;
-}
+    : data(other.data), n(other.n), type(other.type) {}
 
 // геттеры
 template<class T>
-const T& TriangleMatrix<T>::get(int i, int j) const {
-    if (i < 0 || j < 0 || i >= this->get_rows() || j >= this->get_columns())
+const T& TriangleMatrix<T>::get(int row, int column) const {
+    if (! check_range(row, column))
         throw std::out_of_range("Index out of range");
 
-    if (type == TriangleType::upper_triangle && i > j)
-        return T(0);
+    if (type == TriangleType::upper_triangle && row > column)
+        return zero;
 
-    if (type == TriangleType::lower_triangle && j > i)
-        return T(0);
+    if (type == TriangleType::lower_triangle && column > row)
+        return zero;
 
-    return BaseMatrix<T>::get(i, j);
+    return data.get(triangle_index(row, column)); // правки
 }
 
 template<class T>
@@ -97,35 +88,37 @@ int TriangleMatrix<T>::get_columns() const {
 }
 
 template<class T>
-void TriangleMatrix<T>::set(const T &value, int i, int j) {
-    if (i < 0 || j < 0 || i >= this->get_rows() || j >= this->get_columns())
+void TriangleMatrix<T>::set(const T &value, int row, int column) {
+    if (!check_range(row, column))
         throw std::out_of_range("Index out of range");
 
-    if (type == TriangleType::upper_triangle && i > j)
+    if (type == TriangleType::upper_triangle && row > column)
         throw std::out_of_range("Index out of upper_triangle's range");
 
-    if (type == TriangleType::lower_triangle && j > i)
+    if (type == TriangleType::lower_triangle && column > row)
         throw std::out_of_range("Index out of lower_triangle's range");
 
-    BaseMatrix<T>::set(value, i, j);
-}
+    data.set(value, triangle_index(row, column));
+} // негативные тесты (матрицы разных типов,
 
 template<class T>
 double TriangleMatrix<T>::norm() const{
     double sum = 0;
 
-    for (int i = 0; i < this->get_rows(); i++) {
-
-        if (type == TriangleType::upper_triangle) {
+    if (type == TriangleType::upper_triangle) {
+        for (int i = 0; i < this->get_rows(); i++) {
             for (int j = i; j < this->get_rows(); j++) {
-                auto value = static_cast<double>(this->get(i, j));
+                using std::abs;
+                auto value = static_cast<double>(abs(this->get(i, j)));
                 sum += value * value;
             }
         } // type upper
-
-        else {
+    }
+    else {
+        for (int i = 0; i < this->get_rows(); i++){
             for (int j = 0; j <= i; j++) {
-                T value = static_cast<double>(this->get(i, j));
+                using std::abs;
+                auto value = static_cast<double>(abs(this->get(i, j)));
                 sum += value * value;
             }
         } // type lower
@@ -152,22 +145,40 @@ SquareMatrix<T>* TriangleMatrix<T>::add(const IMatrix<T>& other) const {
 
 template<class T>
 TriangleMatrix<T>* TriangleMatrix<T>::multiply_scalar(const T& scalar) const {
-    auto *result = new TriangleMatrix<T>(this->get_rows(), this->type);
+    int size = data.get_size();
 
-    for (int i = 0; i < this->get_rows(); i++) {
+    auto* result = new TriangleMatrix<T>(*this); // копия
 
-        if (this->type == TriangleType::upper_triangle) {
-            for (int j = i; j < this->get_columns(); j++)
-                result->set(this->get(i, j) * scalar, i, j);
-        }
-
-        else {
-            for (int j = 0; j <= i; j++)
-                result->set(this->get(i, j) * scalar, i, j);
-        }
+    for (int i = 0; i < size; i++) {
+        result->data.set(this->data.get(i) * scalar, i);
     }
+
     return result;
 }
 
+// private functions
+
+template<class T>
+int TriangleMatrix<T>::triangle_index(int row, int column) const {
+    if (type == TriangleType::lower_triangle)
+        return row * (row + 1) / 2 + column;
+
+    if (type == TriangleType::upper_triangle)
+        return row * this->get_rows() - row * (row - 1) / 2 + (column - row);
+
+    throw std::logic_error("Invalid triangle type");
+}
+
+template<class T>
+int TriangleMatrix<T>::check_size(int n) {
+    if (n < 0)
+        throw std::invalid_argument("Matrix's size must be positive");
+    return n * (n + 1) / 2;
+}
+
+template<class T>
+bool TriangleMatrix<T>::check_range(int row, int column) const {
+    return row >= 0 && column >= 0 && row < this->get_rows() && column < this->get_columns();
+}
 
 #endif //LABA3_TRIANGLE_MATRIX_H

@@ -2,7 +2,6 @@
 #define LABA3_SPARSE_MATRIX_H
 
 #include <complex>
-
 #include "imatrix.h"
 #include "LABA_2/dynamicArray.h"
 
@@ -11,6 +10,16 @@ struct Element {
     int row;
     int column;
     T value;
+
+    int compare(int i, int j) const {
+        if (row < i) return -1;
+        if (row > i) return 1;
+
+        if (column < j) return -1;
+        if (column > j) return 1;
+
+        return 0; // равны
+    }
 };
 
 // большинство элементов равны 0, но мы их хранить не будем
@@ -19,20 +28,20 @@ class SparseMatrix : public IMatrix<T>{
 
 public:
     SparseMatrix();
-    SparseMatrix(int i, int j);
-    SparseMatrix(T *items, int i, int j);
+    SparseMatrix(int row, int column);
+    SparseMatrix(T *items, int row, int column);
     SparseMatrix(const SparseMatrix& other);
 
     ~SparseMatrix() override = default;
 
-    const T& get(int i, int j) const override;
+    const T& get(int row, int column) const override;
 
     int get_rows() const override;
     int get_columns() const override;
 
     double norm() const override;
 
-    void set(const T& value, int i, int j) override;
+    void set(const T& value, int row, int column) override;
 
     SparseMatrix<T>* add(const IMatrix<T>& other) const override;
     SparseMatrix<T>* multiply_scalar(const T& scalar) const override;
@@ -42,55 +51,42 @@ private:
     int rows;
     int columns;
 
-    int bin_search(int i, int j) const; // бинарный поиск элемента (i,j)
-    int lower_bound(int i, int j) const; // поиск нижней границы для вставки элемента
+    int bin_search(int row, int column) const; // бинарный поиск элемента (i,j)
+    int lower_bound(int row, int column) const; // поиск нижней границы для вставки элемента
 
+    static int check_size(int row, int column);
+    void check_range(int row, int column) const;
+
+    static const T zero{};
 };
 
 template<class T>
 SparseMatrix<T>::SparseMatrix()
-    : data(0)
-{
-    rows = 0;
-    columns = 0;
-}
+    : data(0), rows(0), columns(0) {}
 
 template<class T>
-SparseMatrix<T>::SparseMatrix(int i, int j)
-    : data(i * j)
-{
-    rows = i;
-    columns = j;
-}
+SparseMatrix<T>::SparseMatrix(int row, int column)
+    : data(check_size(row, column)), rows(row), columns(column) {}
 
 template<class T>
-SparseMatrix<T>::SparseMatrix(T *items, int i, int j)
-    : data(items)
-{
-    rows = i;
-    columns = j;
-}
+SparseMatrix<T>::SparseMatrix(T *items, int row, int column)
+    : data(items, check_size(row, column)), rows(row), columns(column) {}
 
 template<class T>
 SparseMatrix<T>::SparseMatrix(const SparseMatrix &other)
-    : data(other.data)
-{
-    rows = other.rows;
-    columns = other.columns;
-}
+    : data(other.data), rows(other.rows), columns(other.columns) {}
 
 template<class T>
-const T &SparseMatrix<T>::get(int i, int j) const {
-    if (i < 0 || j < 0 || i >= this->get_rows() || j >= this->get_columns())
-        throw std::out_of_range("Index out of range");
+const T& SparseMatrix<T>::get(int row, int column) const {
+    check_range(row, column);
 
     for (int k = 0; k < data.get_size(); k++) {
 
-        if (data.get(k).row == i && data.get(k).column == j)
+        if (data.get(k).row == row && data.get(k).column == column)
             return data.get(k).value;
     }
 
-    return T(0); // если не нашли элемент, то это 0
+    return zero; // если не нашли элемент, то это 0
 }
 
 template<class T>
@@ -108,8 +104,8 @@ double SparseMatrix<T>::norm() const {
     double sum = 0;
 
     for (int k = 0; k < data.get_size(); k++) {
-        auto value = static_cast<double>(data.get(k).value);
-
+        using std::abs;
+        auto value = static_cast<double>(abs(data.get(k).value));
         sum += value * value;
     }
 
@@ -117,29 +113,28 @@ double SparseMatrix<T>::norm() const {
 }
 
 template<class T>
-void SparseMatrix<T>::set(const T& value, int i, int j){
-    if (i < 0 || j < 0 || i >= this->get_rows() || j >= this->get_columns())
-        throw std::out_of_range("index");
+void SparseMatrix<T>::set(const T& value, int row, int column){
+    check_range(row, column);
 
-    int index = bin_search(i, j);
+    int index = bin_search(row, column);
 
     // элемент найден
     if (index != -1) {
-        if (value == T(0)){
+        if (value == zero){
             data.remove_at(index);
         }
 
         else{
-            data.set(Element<T>{i, j, value}, index);
+            data.set(Element<T>{row, column, value}, index);
         }
         return;
     }
 
     // элемент НЕ найден
-    if (value == T(0))
+    if (value == zero)
         return;
 
-    int pos = lower_bound(i, j);
+    int pos = lower_bound(row, column);
 
     data.resize(data.get_size() + 1);
 
@@ -148,7 +143,7 @@ void SparseMatrix<T>::set(const T& value, int i, int j){
         data.set(data.get(k - 1), k);
     }
 
-    data.set(Element<T>{i, j, value}, pos);
+    data.set(Element<T>{row, column, value}, pos);
 }
 
 template<class T>
@@ -171,13 +166,13 @@ template<class T>
 SparseMatrix<T>* SparseMatrix<T>::multiply_scalar(const T& scalar) const {
     auto *result = new SparseMatrix<T>(this->get_rows(), this->get_columns());
 
-    if (scalar == T(0))
+    if (scalar == zero)
         return result;
 
     for (int k = 0; k < data.get_size(); k++) {
-        const Element<T>& e = data.get(k);
+        const Element<T>& element = data.get(k);
 
-        result->set(e.value * scalar, e.i, e.j);
+        result->set(element.value * scalar, element.row, element.column);
     }
 
     return result;
@@ -185,7 +180,7 @@ SparseMatrix<T>* SparseMatrix<T>::multiply_scalar(const T& scalar) const {
 
 // private function
 template<class T>
-int SparseMatrix<T>::bin_search(int i, int j) const {
+int SparseMatrix<T>::bin_search(int row, int column) const {
     int left = 0;
     int right = data.get_size() - 1;
 
@@ -193,12 +188,12 @@ int SparseMatrix<T>::bin_search(int i, int j) const {
     {
         int mid = (left + right) / 2;
 
-        const Element<T>& e = data.get(mid);
+        const Element<T>& element = data.get(mid);
 
-        if (e.i == i && e.j == j)
+        if (element.compare(row, column) == 0)
             return mid;
 
-        if (e.i < i || (e.i == i && e.j < j))
+        if (element.compare(row, column) < 0)
             left = mid + 1;
         else
             right = mid - 1;
@@ -208,7 +203,7 @@ int SparseMatrix<T>::bin_search(int i, int j) const {
 }
 
 template<class T>
-int SparseMatrix<T>::lower_bound(int i, int j) const {
+int SparseMatrix<T>::lower_bound(int row, int column) const {
     int left = 0;
     int right = data.get_size();
 
@@ -216,14 +211,28 @@ int SparseMatrix<T>::lower_bound(int i, int j) const {
     {
         int mid = (left + right) / 2;
 
-        const Element<T>& e = data.get(mid);
+        const Element<T>& element = data.get(mid);
 
-        if (e.i < i || (e.i == i && e.j < j))
+        if (element.compare(row,column) < 0)
             left = mid + 1;
         else
             right = mid;
     }
 
     return left;
+}
+
+template<class T>
+int SparseMatrix<T>::check_size(int row, int column) {
+    if (row < 0 || column < 0)
+        throw std::out_of_range("index");
+
+    return row * column;
+}
+
+template<class T>
+void SparseMatrix<T>::check_range(int row, int column) const {
+    if (row < 0 || column < 0 || row >= this->get_rows() || column >= this->get_columns())
+        throw std::out_of_range("Index out of range");
 }
 #endif //LABA3_SPARSE_MATRIX_H

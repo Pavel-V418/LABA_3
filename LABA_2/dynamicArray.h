@@ -35,23 +35,25 @@ public:
 
     public:
         ArrayEnumerator(const DynamicArray<T> *arr)
-            : array(arr), index(0) {}
+            : current(arr->data), // указатель на первый элемент
+              end(arr->data + arr->get_size()) {} // указатель на конец
 
-        bool has_more_elements() override{ // has more elemen
-            return index < array->get_size();
+        bool has_more_elements() override {
+            return current != end;
         }
 
-        const T& next() override{
+        const T& next() override {
             if (!has_more_elements())
-                throw std::out_of_range("ArrayEnumerator::Next");
+                throw std::out_of_range("ArrayEnumerator::next");
 
-            return array->get(index++); // вернуть текущий элемент и передвинуться на следующий
+            return *current++; // разыменовали и сдвинулись
         }
 
     private:
-        const DynamicArray<T> *array;
-        int index;
+        const T* current;
+        const T* end;
     };
+
 
 };
 
