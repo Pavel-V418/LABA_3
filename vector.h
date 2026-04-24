@@ -2,6 +2,7 @@
 #define LABA3_VECTOR_H
 
 #include "LABA_2/dynamicArray.h"
+#include "imatrix.h"
 #include <cmath>
 
 template<class T>
@@ -37,7 +38,7 @@ private:
     int n;
 
     static int check_size(int n);
-    void compare_sizes(const Vector<T>& other);
+    void compare_sizes(const Vector<T>& other) const;
     void check_index(int index) const;
 };
 
@@ -70,6 +71,7 @@ int Vector<T>::get_size() const {
 
 template<class T>
 void Vector<T>::set(const T& value, int index) {
+    check_index(index);
 
     data.set(value, index);
 }
@@ -79,7 +81,8 @@ double Vector<T>::norm() const {
     double sum = 0;
 
     for (int i = 0; i < this->get_size(); i++) {
-        auto value = static_cast<double>(this->get(i));
+        using std::abs;
+        auto value = static_cast<double>(abs(this->get(i)));
         sum += value * value;
     }
 
@@ -138,6 +141,26 @@ Vector<T> Vector<T>::operator*(const T &scalar) const {
     return result;
 }
 
+template<class T>
+Vector<T> operator*(const IMatrix<T>& A, const Vector<T>& x) {
+    if (A.get_columns() != x.get_size())
+        throw std::invalid_argument("Matrix-Vector size mismatch");
+
+    Vector<T> result(A.get_rows());
+
+    for (int i = 0; i < A.get_rows(); i++) {
+        T sum = T{};
+
+        for (int j = 0; j < A.get_columns(); j++) {
+            sum += A.get(i,j) * x[j];
+        }
+
+        result.set(sum, i);
+    }
+
+    return result;
+}
+
 //private
 template<class T>
 int Vector<T>::check_size(int n) {
@@ -154,7 +177,7 @@ void Vector<T>::check_index(int index) const {
 }
 
 template<class T>
-void Vector<T>::compare_sizes(const Vector<T>& other) {
+void Vector<T>::compare_sizes(const Vector<T>& other) const{
     if (this->get_size() != other.get_size())
         throw std::invalid_argument("Vector::operator+: Dimensions mismatch");
 }

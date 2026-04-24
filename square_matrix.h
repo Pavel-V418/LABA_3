@@ -95,7 +95,7 @@ double SquareMatrix<T>::norm() const {
 template <class T>
 void SquareMatrix<T>::swap_rows(int row1, int row2) {
     if (row1 == row2)
-        throw std::out_of_range("row1 = row2");
+        return;
 
     int n = this->get_rows();
 

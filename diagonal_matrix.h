@@ -33,7 +33,7 @@ private:
     DynamicArray<T> data; // хранит только элементы на диагонали матрицы
     int n; // так как диагональная матрица - квадратная
 
-    static const T zero{};
+    static inline const T zero{};
 
     static int check_size(int n);
 
@@ -64,7 +64,7 @@ const T& DiagonalMatrix<T>::get(int row, int column) const{
     if (row != column)
         return zero;
 
-    return data[row];
+    return data.get(row);
 }
 
 template<class T>
@@ -87,7 +87,7 @@ double DiagonalMatrix<T>::norm() const {
     double sum = 0;
     for (int i = 0; i < n; i++) {
         using std::abs;
-        auto temp = static_cast<double>(abs(data[i]));
+        auto temp = static_cast<double>(abs(data.get(i)));
         sum += temp * temp;
     }
 
@@ -110,7 +110,7 @@ SquareMatrix<T>* DiagonalMatrix<T>::add(const IMatrix<T> &other) const {
     if (this->get_columns() != other.get_columns() || this->get_rows() != other.get_rows())
         throw std::invalid_argument("Matrix size must match");
 
-    auto *result = new DiagonalMatrix<T>(this->get_size());
+    auto *result = new SquareMatrix<T>(this->get_size());
 
     for (int i = 0; i < this->get_rows(); i++) {
         for (int j = 0; j < this->get_columns(); j++)
@@ -126,7 +126,7 @@ DiagonalMatrix<T>* DiagonalMatrix<T>::multiply_scalar(const T& scalar) const {
     auto *result = new DiagonalMatrix<T>(this->get_size());
 
     for (int i = 0; i < this->get_size(); i++)
-        result->data.set(this->get(i) * scalar, i);
+        result->data.set(this->data.get(i) * scalar, i);
 
     return result;
 }

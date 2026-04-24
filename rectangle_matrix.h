@@ -3,6 +3,7 @@
 
 #include "imatrix.h"
 #include "LABA_2/dynamicArray.h"
+#include <cmath>
 
 template<class T>
 class RectangleMatrix : public IMatrix<T>{

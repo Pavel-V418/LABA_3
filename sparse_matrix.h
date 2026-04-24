@@ -29,7 +29,7 @@ class SparseMatrix : public IMatrix<T>{
 public:
     SparseMatrix();
     SparseMatrix(int row, int column);
-    SparseMatrix(T *items, int row, int column);
+    SparseMatrix(T *items, int row, int column, int count);
     SparseMatrix(const SparseMatrix& other);
 
     ~SparseMatrix() override = default;
@@ -57,20 +57,20 @@ private:
     static int check_size(int row, int column);
     void check_range(int row, int column) const;
 
-    static const T zero{};
+    static inline const T zero{};
 };
-
+// добавить проверку(см гитхаб)
 template<class T>
 SparseMatrix<T>::SparseMatrix()
     : data(0), rows(0), columns(0) {}
 
 template<class T>
 SparseMatrix<T>::SparseMatrix(int row, int column)
-    : data(check_size(row, column)), rows(row), columns(column) {}
+    : data(0), rows(row), columns(column) {}
 
 template<class T>
-SparseMatrix<T>::SparseMatrix(T *items, int row, int column)
-    : data(items, check_size(row, column)), rows(row), columns(column) {}
+SparseMatrix<T>::SparseMatrix(T *items, int row, int column, int count)
+    : data(items, count), rows(row), columns(column) {}
 
 template<class T>
 SparseMatrix<T>::SparseMatrix(const SparseMatrix &other)

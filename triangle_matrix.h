@@ -38,7 +38,7 @@ private:
     int n; // матрица квадратная
     TriangleType type;
 
-    static const T zero{}; // живет всю программу
+    static inline const T zero{}; // живет всю программу
 
     static int check_size(int n);
     bool check_range(int row,int column) const;
@@ -180,5 +180,6 @@ template<class T>
 bool TriangleMatrix<T>::check_range(int row, int column) const {
     return row >= 0 && column >= 0 && row < this->get_rows() && column < this->get_columns();
 }
+
 
 #endif //LABA3_TRIANGLE_MATRIX_H

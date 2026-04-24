@@ -12,4 +12,5 @@ add_executable(LABA3 main.cpp
         sparse_matrix.h
         complex.h
         vector.h
+        systems_of_equations.h
 )
