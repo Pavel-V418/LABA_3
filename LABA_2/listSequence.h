@@ -26,12 +26,13 @@ public:
     int get_length() const override;
 
 protected:
-    LinkedList<T> *items;
-
     void append_internal(const T& item) override;
     void prepend_internal(const T& item) override;
     void insert_at_internal(const T& item, int index) override;
     void remove_at_internal(int index) override;
+
+private:
+    LinkedList<T> *items;
 
 };
 

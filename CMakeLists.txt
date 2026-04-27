@@ -13,4 +13,7 @@ add_executable(LABA3 main.cpp
         complex.h
         vector.h
         systems_of_equations.h
+        imatrix_print.h
+        vector_print.h
+        complex_print.h
 )

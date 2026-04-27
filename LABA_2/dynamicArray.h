@@ -69,7 +69,7 @@ DynamicArray<T>::DynamicArray(const T *items, int count) {
     else
         capacity = 1;
 
-    data = new T[capacity];
+    data = new T[capacity]();
 
     for (int i = 0; i < size; i++)
         data[i] = items[i];
@@ -87,7 +87,7 @@ DynamicArray<T>::DynamicArray(int size) {
     else
         capacity = 1;
 
-    data = new T[capacity];
+    data = new T[capacity]();
 }
 
 template<class T>
@@ -95,7 +95,7 @@ DynamicArray<T>::DynamicArray(const DynamicArray<T>& dynamicArray) {
     this->size = dynamicArray.size;
     capacity = dynamicArray.capacity;
 
-    data = new T[capacity];
+    data = new T[capacity]();
 
     for (int i = 0; i < size; i++)
         data[i] = dynamicArray.data[i];
@@ -147,6 +147,7 @@ void DynamicArray<T>::resize(int newSize) {
 
     delete[] data;
     data = newData;
+    capacity = newCapacity;
     size = newSize;
 }
 
