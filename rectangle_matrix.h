@@ -103,7 +103,7 @@ double RectangleMatrix<T>::norm() const {
 template <class T>
 RectangleMatrix<T>* RectangleMatrix<T>::add(const IMatrix<T>& other) const {
     if (this->get_rows() != other.get_rows() || this->get_columns() != other.get_columns())
-        throw std::out_of_range("Matrix size must match");
+        throw std::invalid_argument("Matrix size must match");
 
     auto *result = new RectangleMatrix<T>(this->get_rows(), this->get_columns());
 
@@ -172,7 +172,7 @@ void RectangleMatrix<T>::add_row(int row1, int row2, const T& scalar) {
 template<class T>
 int RectangleMatrix<T>::check_size(int row, int column) {
     if (row < 0 || column < 0)
-        throw std::out_of_range("Index out of range");
+        throw std::invalid_argument("Index out of range");
 
     return row * column;
 }

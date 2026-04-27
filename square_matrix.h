@@ -48,7 +48,7 @@ SquareMatrix<T>* SquareMatrix<T>::add(const IMatrix<T>& other) const {
     int n = this->get_rows();
 
     if (n != other.get_columns() || n != other.get_rows())
-        throw std::out_of_range("Matrix size must match");
+        throw std::invalid_argument("Matrix size must match");
 
     auto *result = new SquareMatrix<T>(n);
 

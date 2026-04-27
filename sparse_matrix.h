@@ -66,11 +66,17 @@ SparseMatrix<T>::SparseMatrix()
 
 template<class T>
 SparseMatrix<T>::SparseMatrix(int row, int column)
-    : data(0), rows(row), columns(column) {}
+    : data(0), rows(row), columns(column)
+{
+    check_size(row, column);
+}
 
 template<class T>
 SparseMatrix<T>::SparseMatrix(T *items, int row, int column, int count)
-    : data(items, count), rows(row), columns(column) {}
+: data(items, count), rows(row), columns(column)
+{
+    check_size(row, column);
+}
 
 template<class T>
 SparseMatrix<T>::SparseMatrix(const SparseMatrix &other)
@@ -225,7 +231,7 @@ int SparseMatrix<T>::lower_bound(int row, int column) const {
 template<class T>
 int SparseMatrix<T>::check_size(int row, int column) {
     if (row < 0 || column < 0)
-        throw std::out_of_range("index");
+        throw std::out_of_range("index out of range");
 
     return row * column;
 }
