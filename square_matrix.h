@@ -14,6 +14,7 @@ public:
     SquareMatrix(const SquareMatrix<T>& other);
 
     ~SquareMatrix() override = default;
+    int get_size() const;
 
     // operations
     SquareMatrix<T>* add(const IMatrix<T>& other) const override;
@@ -42,6 +43,11 @@ SquareMatrix<T>::SquareMatrix(T *arr, int n)
 template <class T>
 SquareMatrix<T>::SquareMatrix(const SquareMatrix<T>& other)
     : RectangleMatrix<T>(other) {}
+
+template <typename T>
+int SquareMatrix<T>::get_size() const {
+    return this->get_rows();
+}
 
 template<class T>
 SquareMatrix<T>* SquareMatrix<T>::add(const IMatrix<T>& other) const {

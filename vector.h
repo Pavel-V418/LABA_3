@@ -27,7 +27,7 @@ public:
     Vector<T> operator+(const Vector<T>& other) const;
     Vector<T> operator-(const Vector<T>& other) const;
     Vector<T> operator*(const T& scalar) const;
-    Vector<T>& operator=(const Vector<T>& other) = default;
+    Vector<T>& operator=(const Vector<T>& other);
 
     T dot(const Vector<T>& other) const; // не const T&, потому что переменная под полученное число создаётся внутри функции
 
@@ -139,6 +139,22 @@ Vector<T> Vector<T>::operator*(const T &scalar) const {
         result.set(this->get(i) * scalar, i);
 
     return result;
+}
+
+template<class T>
+Vector<T>& Vector<T>::operator=(const Vector<T>& other) {
+    if (this == &other)
+        return *this;
+
+    if (this->get_size() != other.get_size())
+        throw std::runtime_error("Different vector sizes");
+
+    for (int i = 0; i < get_size(); i++) {
+
+        set(other.get(i),i);
+    }
+
+    return *this;
 }
 
 template<class T>

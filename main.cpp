@@ -8,8 +8,9 @@
 #include "complex.h"
 #include "imatrix_print.h"
 #include "vector_print.h"
-#include "complex_print.h"
-
+#include "complex_io.h"
+#include <chrono>
+#include "systems_of_equations.h"
 
 template<typename T>
 T safe_input() {
@@ -43,12 +44,14 @@ IMatrix<T>* create_matrix() {
     int n, m;
 
     switch (type) {
+
         case 1:
             std::cout << "rows: ";
             n = safe_input<int>();
 
             std::cout << "cols: ";
             m = safe_input<int>();
+
             return new RectangleMatrix<T>(n, m);
 
         case 2:
@@ -66,9 +69,14 @@ IMatrix<T>* create_matrix() {
             std::cout << "0 - lower, 1 - upper: ";
             t = safe_input<int>();
 
+            if (t != 0 && t != 1)
+                throw std::invalid_argument("Invalid triangle type");
+
             return new TriangleMatrix<T>(
                 n,
-                t == 0 ? TriangleType::lower_triangle : TriangleType::upper_triangle
+                t == 0
+                    ? TriangleType::lower_triangle
+                    : TriangleType::upper_triangle
             );
         }
 
@@ -381,38 +389,275 @@ void vector_menu() {
     }
 }
 
+// SLAE
+using Clock = std::chrono::high_resolution_clock;
+
+template<typename T>
+void experiment_4_1() {
+
+    int sizes[] = {100, 200, 500};
+
+    std::cout << "\n===== EXPERIMENT 4.1 =====\n";
+
+    for (int s = 0; s < 3; s++) {
+        int n = sizes[s];
+
+        auto sys = SystemOfEquations<T>::random(n);
+
+        // --- Gauss without pivot ---
+        auto start = Clock::now();
+
+        Vector<T> x1 = sys.gauss_without_pivot();
+
+        auto end = Clock::now();
+
+        double t_gauss_no = std::chrono::duration<double>(end - start).count();
+
+        // --- Gauss with pivot ---
+        start = Clock::now();
+
+        Vector<T> x2 = sys.gauss_with_pivot();
+
+        end = Clock::now();
+
+        double t_gauss_pivot = std::chrono::duration<double>(end - start).count();
+
+        // --- LU ---
+        start = Clock::now();
+
+        Vector<T> x3 = sys.solve_lu();
+
+        end = Clock::now();
+
+        double t_lu = std::chrono::duration<double>(end - start).count();
+
+        std::cout << "n = " << n << "\n";
+
+        std::cout << "Gauss (no pivot): " << t_gauss_no << "\n";
+        std::cout << "Gauss (pivot): "<< t_gauss_pivot << "\n";
+        std::cout << "LU: " << t_lu << "\n";
+
+        std::cout << "--------------------------\n";
+    }
+}
+
+template<typename T>
+void experiment_4_2() {
+
+    const int n = 500;
+
+    int ks[] = {1, 10, 100};
+
+    std::cout << "\n===== EXPERIMENT 4.2 =====\n";
+
+    auto base_system = SystemOfEquations<T>::random(n);
+
+    const SquareMatrix<T>& A = base_system.get_matrix();
+
+    for (int t = 0; t < 3; t++) {
+        int k = ks[t];
+
+        // --- Gauss with pivot ---
+        auto start = Clock::now();
+
+        for (int i = 0; i < k; i++) {
+
+            auto tmp = SystemOfEquations<T>::random(n);
+
+            SystemOfEquations<T> sys(A,tmp.get_vector_free_coef());
+
+            Vector<T> x = sys.gauss_with_pivot();
+        }
+
+        auto end = Clock::now();
+
+        double t_gauss = std::chrono::duration<double>(end - start).count();
+
+        // --- LU cached ---
+        auto first = SystemOfEquations<T>::random(n);
+
+        SystemOfEquations<T> lu_system(A,first.get_vector_free_coef());
+
+        start = Clock::now();
+
+        Vector<T> x0 =lu_system.solve_lu();
+
+        for (int i = 1; i < k; i++) {
+
+            auto tmp = SystemOfEquations<T>::random(n);
+
+            lu_system.set_vector_free_coef(tmp.get_vector_free_coef());
+
+            Vector<T> x = lu_system.solve_lu();
+        }
+
+        end = Clock::now();
+
+        double t_lu =std::chrono::duration<double>(end - start).count();
+
+        std::cout << "k = " << k << "\n";
+
+        std::cout << "Gauss (pivot): "<< t_gauss << "\n";
+        std::cout << "LU: "<< t_lu << "\n";
+
+        std::cout << "--------------------------\n";
+    }
+}
+
+template<typename T>
+void experiment_4_3() {
+
+    int sizes[] = {5, 10, 15};
+
+    std::cout << "\n===== EXPERIMENT 4.3 =====\n";
+
+    for (int s = 0; s < 3; s++) {
+        int n = sizes[s];
+
+        auto sys = SystemOfEquations<T>::hilbert(n);
+
+        Vector<T> exact(n);
+
+        for (int i = 0; i < n; i++)
+            exact.set(T(1), i);
+
+
+        std::cout << "\nn = " << n << "\n";
+
+        // --- Gauss ---
+        try {
+
+            Vector<T> x = sys.gauss_without_pivot();
+
+            std::cout << "Gauss:\n";
+
+            std::cout << "Residual: "<< sys.residual(x)<< "\n";
+
+            std::cout << "Relative error: "<< SystemOfEquations<T>::relative_error(x,exact)<< "\n\n";
+
+        } catch (const std::exception& e) {
+
+            std::cout << "Gauss failed: "<< e.what()<< "\n\n";
+        }
+        // --- Gauss with pivot ---
+        try {
+
+            Vector<T> x =sys.gauss_with_pivot();
+
+            std::cout << "Gauss with pivot:\n";
+
+            std::cout << "Residual: "<< sys.residual(x)<< "\n";
+
+            std::cout << "Relative error: "<< SystemOfEquations<T>::relative_error(x,exact)<< "\n\n";
+
+        } catch (const std::exception& e) {
+
+            std::cout << "Gauss with pivot failed: "<< e.what()<< "\n\n";
+        }
+
+        // --- LU ---
+        try {
+
+            Vector<T> x =sys.solve_lu();
+
+            std::cout << "LU:\n";
+
+            std::cout << "Residual: "<< sys.residual(x)<< "\n";
+
+            std::cout << "Relative error: "<< SystemOfEquations<T>::relative_error(x,exact)<< "\n\n";
+
+        } catch (const std::exception& e) {
+
+            std::cout << "LU failed: "<< e.what()<< "\n\n";
+        }
+
+        std::cout << "--------------------------\n";
+    }
+}
+
 int main() {
+
     while (true) {
+
         std::cout << "\n==== MAIN MENU ====\n";
         std::cout << "1. Matrices\n";
         std::cout << "2. Vectors\n";
+        std::cout << "3. SLAE experiments\n";
         std::cout << "0. Exit\n";
+        std::cout << "Enter your choice: ";
 
         int main_choice = safe_input<int>();
 
-        if (main_choice == 0) break;
+        if (main_choice == 0)
+            break;
+
+        if (main_choice != 1 && main_choice != 2 && main_choice != 3){
+            std::cout << "Invalid menu option\n";
+            continue;
+        }
+
+        // =========================
+        // SLAE EXPERIMENTS
+        // =========================
+        if (main_choice == 3) {
+
+            experiment_4_1<double>();
+            experiment_4_2<double>();
+            experiment_4_3<double>();
+
+            continue;
+        }
 
         std::cout << "\nChoose data type:\n";
-        std::cout << "1. int\n2. double\n3. complex\n";
+        std::cout << "1. int\n";
+        std::cout << "2. double\n";
+        std::cout << "3. complex\n";
 
-        int type;
-        std::cin >> type;
+        int type = safe_input<int>();
 
         try {
+
+            // =========================
+            // MATRICES
+            // =========================
+
             if (main_choice == 1) {
-                if (type == 1) matrix_menu<int>();
-                else if (type == 2) matrix_menu<double>();
-                else if (type == 3) matrix_menu<Complex>();
+
+                if (type == 1)
+                    matrix_menu<int>();
+
+                else if (type == 2)
+                    matrix_menu<double>();
+
+                else if (type == 3)
+                    matrix_menu<Complex>();
+
+                else
+                    std::cout << "Invalid data type\n";
             }
 
+            // =========================
+            // VECTORS
+            // =========================
+
             else if (main_choice == 2) {
-                if (type == 1) vector_menu<int>();
-                else if (type == 2) vector_menu<double>();
-                else if (type == 3) vector_menu<Complex>();
+
+                if (type == 1)
+                    vector_menu<int>();
+
+                else if (type == 2)
+                    vector_menu<double>();
+
+                else if (type == 3)
+                    vector_menu<Complex>();
+
+                else
+                    std::cout << "Invalid data type\n";
             }
 
         } catch (const std::exception& e) {
-            std::cout << "Error: " << e.what() << "\n";
+
+            std::cout << "Error: "<< e.what()<< "\n";
         }
     }
 
